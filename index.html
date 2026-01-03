@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+<meta charset="UTF-8">
+<title>Diesel vs EV kalkulacka</title>
+<style>
+body { font-family: Arial; max-width: 900px; margin: auto; }
+input { width: 100px; padding: 4px; margin: 2px 0; }
+button { margin-right: 5px; padding: 6px 10px; }
+table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+th, td { border: 1px solid #ccc; padding: 6px; text-align: right; }
+th { background: #2c3e50; color: white; }
+td.checkbox { text-align: center; width: 40px; }
+tbody tr:nth-child(even) { background: #f9f9f9; }
+tbody tr:nth-child(odd) { background: #ffffff; }
+td.diff-positive { color: green; font-weight: bold; }
+td.diff-negative { color: red; font-weight: bold; }
+tfoot th, tfoot td { background: #ecf0f1; font-weight: bold; }
+</style>
+</head>
+
+<body>
+<h2>Diesel vs EV kalkulacka jazdy</h2>
+
+<h3>Vstupy</h3>
+Datum: <input type="date" id="date"><br><br>
+Km: <input id="km" type="number"><br><br>
+
+<h4>Diesel</h4>
+Spotreba (l/100km): <input id="dieselCons" value="6.8">
+Cena/l (euro): <input id="dieselPrice" value="1.49"><br><br>
+
+<h4>EV</h4>
+Spotreba (kWh/100km): <input id="evCons" value="17">
+Cena/kWh (euro): <input id="evPrice" value="0.20"><br><br>
+
+<button onclick="addTrip()">Pridat jazdu</button>
+<button onclick="resetTrips()">Vymazat vsetky jazdy</button>
+<button onclick="deleteSelected()">Vymazat oznacene jazdy</button>
+
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Datum</th>
+<th>Km</th>
+<th>Diesel euro</th>
+<th>EV euro</th>
+<th>Rozdiel euro</th>
+</tr>
+</thead>
+<tbody id="rows"></tbody>
+<tfoot>
+<tr>
+<th></th>
+<th>Spolu</th>
+<th id="sumKm">0</th>
+<th id="sumDiesel">0</th>
+<th id="sumEV">0</th>
+<th id="sumDiff">0</th>
+</tr>
+</tfoot>
+</table>
+
+<script>
+let trips = JSON.parse(localStorage.getItem("trips")) || [];
+let sumKm = 0, sumDiesel = 0, sumEV = 0;
+
+const kmInput = document.getElementById("km");
+const dieselCons = document.getElementById("dieselCons");
+const dieselPrice = document.getElementById("dieselPrice");
+const evCons = document.getElementById("evCons");
+const evPrice = document.getElementById("evPrice");
+const dateInput = document.getElementById("date");
+const rows = document.getElementById("rows");
+
+const sumKmEl = document.getElementById("sumKm");
+const sumDieselEl = document.getElementById("sumDiesel");
+const sumEVEl = document.getElementById("sumEV");
+const sumDiffEl = document.getElementById("sumDiff");
+
+// Predvyplní dnešným d?om
+function setToday() {
+  dateInput.value = new Date().toISOString().slice(0, 10);
+}
+setToday();
+
+function render() {
+  rows.innerHTML = "";
+  sumKm = 0;
+  sumDiesel = 0;
+  sumEV = 0;
+
+  trips.forEach((t, index) => {
+    sumKm += t.km;
+    sumDiesel += t.diesel;
+    sumEV += t.ev;
+
+    const diffClass = (t.diesel - t.ev) > 0 ? "diff-positive" : "diff-negative";
+
+    rows.innerHTML += `
+      <tr>
+        <td class="checkbox"><input type="checkbox" data-index="${index}"></td>
+        <td>${t.date}</td>
+        <td>${t.km}</td>
+        <td>${t.diesel.toFixed(2)}</td>
+        <td>${t.ev.toFixed(2)}</td>
+        <td class="${diffClass}">${(t.diesel - t.ev).toFixed(2)}</td>
+      </tr>`;
+  });
+
+  sumKmEl.textContent = sumKm;
+  sumDieselEl.textContent = sumDiesel.toFixed(2);
+  sumEVEl.textContent = sumEV.toFixed(2);
+  sumDiffEl.textContent = (sumDiesel - sumEV).toFixed(2);
+
+  localStorage.setItem("trips", JSON.stringify(trips));
+}
+
+function addTrip() {
+  const km = Number(kmInput.value);
+  const date = dateInput.value;
+
+  if (!km || km <= 0) {
+    alert("Zadaj po?et km");
+    return;
+  }
+  if (!date) {
+    alert("Zadaj datum jazdy");
+    return;
+  }
+
+  const dCons = Number(dieselCons.value);
+  const dPrice = Number(dieselPrice.value);
+  const eCons = Number(evCons.value);
+  const ePrice = Number(evPrice.value);
+
+  const dieselCost = km * (dCons / 100) * dPrice;
+  const evCost = km * (eCons / 100) * ePrice;
+
+  trips.push({ date, km, diesel: dieselCost, ev: evCost });
+
+  kmInput.value = "";
+  setToday(); // reset datum na dnešný de?
+  render();
+}
+
+function resetTrips() {
+  if (!confirm("Naozaj chceš vymaza? všetky jazdy?")) return;
+  trips = [];
+  render();
+}
+
+function deleteSelected() {
+  const checkboxes = document.querySelectorAll('#rows input[type="checkbox"]:checked');
+  const indexes = Array.from(checkboxes).map(cb => Number(cb.dataset.index));
+
+  if(indexes.length === 0) {
+    alert("Nie je ozna?ená žiadna jazda.");
+    return;
+  }
+
+  trips = trips.filter((_, i) => !indexes.includes(i));
+  render();
+}
+
+render();
+</script>
+</body>
+</html>
