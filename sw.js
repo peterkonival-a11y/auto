@@ -1,23 +1,7 @@
-const CACHE_NAME = 'diesel-ev-pwa-v1';
-
-self.addEventListener('install', event => {
-  self.skipWaiting(); // Aktivuje nového SW okamžite
+const CACHE="ev-diesel-cache-v1";
+self.addEventListener("install",e=>{
+  e.waitUntil(caches.open(CACHE).then(c=>c.addAll(["./"])));
 });
-
-self.addEventListener('activate', event => {
-  // Vymaže starú cache pri aktivácii
-  event.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(keys.map(key => caches.delete(key)))
-    )
-  );
-});
-
-self.addEventListener('fetch', event => {
-  // Najprv skontroluje cache, potom sie?
-  event.respondWith(
-    caches.match(event.request).then(cachedResponse => {
-      return cachedResponse || fetch(event.request);
-    })
-  );
+self.addEventListener("fetch",e=>{
+  e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request)));
 });
