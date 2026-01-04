@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fuel Tracker</title>
+<style>
+:root {
+  --main-bg: #d9e6f2;
+  --card-bg: #ffffff;
+  --primary-text: #111111;
+  --secondary-text: #555555;
+  --accent: #1e3a8a;
+  --danger: #e53935;
+}
+
+body {
+  font-family: Arial, sans-serif;
+  margin:0;
+  background: var(--main-bg);
+  color: var(--primary-text);
+}
+
+header {
+  display:flex;
+  justify-content:space-around;
+  background: var(--accent);
+  color:white;
+  padding:12px 0;
+}
+header button {
+  border:none;
+  background:none;
+  color:white;
+  font-size:16px;
+  cursor:pointer;
+  padding:10px;
+}
+header button.active {
+  border-bottom:3px solid white;
+  font-weight:bold;
+}
+
+.container { padding:12px; }
+.hidden { display:none; }
+
+/* Fuel Add Table */
+table { 
+  width:100%; 
+  border-collapse:collapse; 
+  margin-top:10px; 
+  font-size:14px; 
+  border-radius:6px; 
+  overflow:hidden;
+  background: var(--card-bg);
+  box-shadow:0 2px 4px rgba(0,0,0,0.2);
+}
+th, td { padding:6px; text-align:center; }
+th { background: var(--accent); color:white; border:1px solid #ccc; }
+input[type="number"], input[type="date"], input[type="text"], select {
+  width:100%;
+  padding:4px;
+  font-size:14px;
+  border:1px solid #bbb;
+  border-radius:4px;
+  box-sizing:border-box;
+  color:#111;
+}
+
+.add-remove-buttons {
+  display:flex;
+  justify-content:space-evenly;
+  margin-top:10px;
+}
+button.add-row, button.remove-rows {
+    width:40px;
+    height:40px;
+    font-size:24px;
+    color:white;
+    border:none;
+    border-radius:50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+    line-height:0;
+}
+button.add-row { background: var(--accent); }
+button.remove-rows { background: var(--danger); }
+
+/* Statistics */
+.overview {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+  margin-top:10px;
+}
+.overview-card {
+  background:#1e3a8a;
+  color:white;
+  padding:16px 10px;
+  border-radius:12px;
+  text-align:center;
+  box-shadow:0 3px 6px rgba(0,0,0,0.2);
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+}
+.stat-value {
+  font-size:28px;
+  font-weight:bold;
+  margin:0;
+  line-height:1.2;
+}
+.stat-value .unit {
+  font-size:14px;
+  font-weight:normal;
+  display:block;
+  margin-top:2px;
+  color:#cfd8dc;
+}
+.stat-label {
+  font-size:14px;
+  color:#cfd8dc;
+  margin-top:8px;
+  text-align:center;
+}
+
+.delete-row-checkbox { width:16px; height:16px; }
+</style>
+</head>
+<body>
+
+<header>
+<button class="tab-btn active" onclick="openTab('fuelAdd')">Fuel Add</button>
+<button class="tab-btn" onclick="openTab('statistics')">Statistics</button>
+<button class="tab-btn" onclick="openTab('setup')">Setup</button>
+</header>
+
+<div class="container">
+
+<!-- Fuel Add -->
+<div id="fuelAdd">
+<table id="fuelTable">
+<thead>
+<tr>
+<th>Date</th>
+<th>Price/L (&euro;)</th>
+<th>Fuel (L)</th>
+<th>Odometer (km)</th>
+<th>Trip (km)</th>
+<th>Consumption (L/100km)</th>
+<th>Cost/km (&euro;)</th>
+<th>Total (&euro;)</th>
+<th>Del</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><input type="date"></td>
+<td><input type="number" step="0.001" value="1.549"></td>
+<td><input type="number" step="0.01"></td>
+<td><input type="number" step="1"></td>
+<td class="trip"></td>
+<td class="consumption"></td>
+<td class="costPerKm"></td>
+<td class="totalCost"></td>
+<td><input type="checkbox" class="delete-row-checkbox"></td>
+</tr>
+</tbody>
+</table>
+
+<div class="add-remove-buttons">
+<button class="add-row" onclick="addRow()">+</button>
+<button class="remove-rows" onclick="removeSelectedRows()">&minus;</button>
+</div>
+</div>
+
+<!-- Statistics -->
+<div id="statistics" class="hidden">
+<div class="overview">
+  <div class="overview-card">
+    <p id="avgConsumption" class="stat-value"><span class="value">0.00</span><span class="unit">L/100km</span></p>
+    <div class="stat-label">Average Consumption</div>
+  </div>
+  <div class="overview-card">
+    <p id="avgFuelPrice" class="stat-value"><span class="value">0.000</span><span class="unit">&euro;/L</span></p>
+    <div class="stat-label">Average Fuel Price</div>
+  </div>
+  <div class="overview-card">
+    <p id="totalCost" class="stat-value"><span class="value">0.00</span><span class="unit">&euro;</span></p>
+    <div class="stat-label">Total Fuel Cost</div>
+  </div>
+  <div class="overview-card">
+    <p id="totalFuel" class="stat-value"><span class="value">0.00</span><span class="unit">L</span></p>
+    <div class="stat-label">Total Fuel</div>
+  </div>
+  <div class="overview-card">
+    <p id="totalKm" class="stat-value"><span class="value">0.0</span><span class="unit">km</span></p>
+    <div class="stat-label">Total Distance</div>
+  </div>
+  <div class="overview-card">
+    <p id="costPerKm" class="stat-value"><span class="value">0.000</span><span class="unit">&euro;/km</span></p>
+    <div class="stat-label">Cost per km</div>
+  </div>
+</div>
+</div>
+
+<!-- Setup -->
+<div id="setup" class="hidden">
+<h2>Setup</h2>
+<div style="display:flex; flex-direction:column; gap:12px; margin-top:10px;">
+
+  <label>
+    Vehicle Info:
+    <input type="text" id="vehicleType" placeholder="Enter vehicle type" style="width:100%; padding:6px; border-radius:4px; border:1px solid #bbb;">
+  </label>
+
+  <label>
+    Odometer:
+    <select id="odometerUnit" style="width:100%; padding:6px; border-radius:4px; border:1px solid #bbb;">
+      <option value="km">Kilometres</option>
+      <option value="mi">Miles</option>
+    </select>
+  </label>
+
+  <label>
+    Units:
+    <select id="fuelUnit" style="width:100%; padding:6px; border-radius:4px; border:1px solid #bbb;">
+      <option value="litres">Litres</option>
+      <option value="kWh">Electricity (kWh)</option>
+    </select>
+  </label>
+
+  <label>
+    Home Currency:
+    <select id="homeCurrency" style="width:100%; padding:6px; border-radius:4px; border:1px solid #bbb;">
+      <option value="EUR">Euro (&euro;)</option>
+      <option value="USD">US Dollar ($)</option>
+    </select>
+  </label>
+
+</div>
+</div>
+
+</div>
+
+<script>
+// Tab switch
+function openTab(tabName){
+  ['fuelAdd','statistics','setup'].forEach(id=>document.getElementById(id).classList.add('hidden'));
+  document.getElementById(tabName).classList.remove('hidden');
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+}
+
+// Fuel Add functions
+function addRow(){
+  const tbody = document.querySelector('#fuelTable tbody');
+  const row = document.createElement('tr');
+  row.innerHTML=`
+    <td><input type="date"></td>
+    <td><input type="number" step="0.001" value="1.549"></td>
+    <td><input type="number" step="0.01"></td>
+    <td><input type="number" step="1"></td>
+    <td class="trip"></td>
+    <td class="consumption"></td>
+    <td class="costPerKm"></td>
+    <td class="totalCost"></td>
+    <td><input type="checkbox" class="delete-row-checkbox"></td>
+  `;
+  tbody.appendChild(row);
+  row.querySelectorAll('input').forEach(i=>i.addEventListener('input', calculateTable));
+  calculateTable();
+}
+
+function removeSelectedRows(){
+  document.querySelectorAll('.delete-row-checkbox').forEach(cb=>{
+    if(cb.checked) cb.closest('tr').remove();
+  });
+  calculateTable();
+}
+
+// Update units and currency
+function applySettings(){
+  const odometerUnit = document.getElementById('odometerUnit').value;
+  const fuelUnit = document.getElementById('fuelUnit').value;
+  const homeCurrency = document.getElementById('homeCurrency').value;
+
+  const currencySymbol = homeCurrency === 'EUR' ? '&euro;' : '$';
+
+  // Fuel Add headers
+  document.querySelector('#fuelTable th:nth-child(4)').textContent = 'Odometer (' + (odometerUnit==='km'?'km':'mi') + ')';
+  document.querySelector('#fuelTable th:nth-child(3)').textContent = 'Fuel (' + fuelUnit + ')';
+  document.querySelector('#fuelTable th:nth-child(2)').innerHTML = 'Price/' + fuelUnit + ' (' + currencySymbol + ')';
+  document.querySelector('#fuelTable th:nth-child(6)').textContent = 'Consumption (' + fuelUnit + '/100' + (odometerUnit==='km'?'km':'mi') + ')';
+  document.querySelector('#fuelTable th:nth-child(7)').innerHTML = 'Cost/km (' + currencySymbol + ')';
+  document.querySelector('#fuelTable th:nth-child(8)').innerHTML = 'Total (' + currencySymbol + ')';
+
+  // Statistics units
+  document.getElementById('avgConsumption').querySelector('.unit').textContent = fuelUnit + '/100' + (odometerUnit==='km'?'km':'mi');
+  document.getElementById('avgFuelPrice').querySelector('.unit').innerHTML = currencySymbol + '/' + fuelUnit;
+  document.getElementById('totalCost').querySelector('.unit').innerHTML = currencySymbol;
+  document.getElementById('totalFuel').querySelector('.unit').textContent = fuelUnit;
+  document.getElementById('totalKm').querySelector('.unit').textContent = (odometerUnit==='km'?'km':'mi');
+  document.getElementById('costPerKm').querySelector('.unit').innerHTML = currencySymbol + '/' + (odometerUnit==='km'?'km':'mi');
+}
+
+// Calculation (values unchanged, only numeric calculations)
+function calculateTable(){
+  const rows = document.querySelectorAll('#fuelTable tbody tr');
+  let prevOdometer = null, totalLiters=0, totalTrip=0, totalCost=0, totalFuelPrice=0, fuelCount=0;
+  rows.forEach(row=>{
+    const inputs = row.querySelectorAll('input[type="number"], input[type="date"]');
+    const pricePerL = parseFloat(inputs[1].value)||0;
+    const liters = parseFloat(inputs[2].value)||0;
+    const odometer = parseFloat(inputs[3].value)||0;
+
+    const trip = prevOdometer!==null ? odometer-prevOdometer:0;
+    row.querySelector('.trip').textContent = trip>0 ? trip.toFixed(1) : '';
+    const consumption = trip>0 ? (liters/trip*100) : 0;
+    row.querySelector('.consumption').textContent = trip>0 ? consumption.toFixed(2) : '';
+    const costPerKm = trip>0 ? (pricePerL*liters/trip) : 0;
+    row.querySelector('.costPerKm').textContent = trip>0 ? costPerKm.toFixed(3) : '';
+    const total = pricePerL*liters;
+    row.querySelector('.totalCost').textContent = total.toFixed(2);
+
+    prevOdometer = odometer;
+    if(trip>0){ totalTrip+=trip; totalLiters+=liters; }
+    totalCost+=total;
+    if(!isNaN(pricePerL)){ totalFuelPrice+=pricePerL; fuelCount++; }
+  });
+
+  const avgConsumption = totalTrip>0 ? totalLiters/totalTrip*100 : 0;
+  const avgFuelPrice = fuelCount>0 ? totalFuelPrice/fuelCount : 0;
+  const costPerKmVal = totalTrip>0 ? totalCost/totalTrip : 0;
+
+  document.getElementById('avgConsumption').querySelector('.value').textContent = avgConsumption.toFixed(2);
+  document.getElementById('avgFuelPrice').querySelector('.value').textContent = avgFuelPrice.toFixed(3);
+  document.getElementById('totalCost').querySelector('.value').textContent = totalCost.toFixed(2);
+  document.getElementById('totalFuel').querySelector('.value').textContent = totalLiters.toFixed(2);
+  document.getElementById('totalKm').querySelector('.value').textContent = totalTrip.toFixed(1);
+  document.getElementById('costPerKm').querySelector('.value').textContent = costPerKmVal.toFixed(3);
+
+  applySettings();
+}
+
+// Init
+calculateTable();
+document.querySelectorAll('#fuelTable input').forEach(i=>i.addEventListener('input', calculateTable));
+document.getElementById('odometerUnit').addEventListener('change', applySettings);
+document.getElementById('fuelUnit').addEventListener('change', applySettings);
+document.getElementById('homeCurrency').addEventListener('change', applySettings);
+</script>
+
+</body>
+</html>
