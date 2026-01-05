@@ -4,6 +4,18 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Fuel Tracker</title>
+
+<!-- PWA manifest -->
+<link rel="manifest" href="manifest.json">
+
+<!-- Favicons / Apple touch icons -->
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16x16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
+
+<!-- Theme color for mobile toolbar -->
+<meta name="theme-color" content="#1e3a8a">
+
 <style>
 :root {
   --main-bg: #d9e6f2;
@@ -288,7 +300,7 @@ function applySettings(){
   const fuelUnit = document.getElementById('fuelUnit').value;
   const homeCurrency = document.getElementById('homeCurrency').value;
 
-  const currencySymbol = homeCurrency === 'EUR' ? '&euro;' : '$';
+  const currencySymbol = homeCurrency === 'EUR' ? '€' : '$';
 
   // Fuel Add headers
   document.querySelector('#fuelTable th:nth-child(4)').textContent = 'Odometer (' + (odometerUnit==='km'?'km':'mi') + ')';
@@ -352,6 +364,15 @@ document.querySelectorAll('#fuelTable input').forEach(i=>i.addEventListener('inp
 document.getElementById('odometerUnit').addEventListener('change', applySettings);
 document.getElementById('fuelUnit').addEventListener('change', applySettings);
 document.getElementById('homeCurrency').addEventListener('change', applySettings);
+
+// Register Service Worker for PWA
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js')
+      .then(reg => console.log('Service Worker registered.', reg))
+      .catch(err => console.log('Service Worker failed:', err));
+  });
+}
 </script>
 
 </body>
