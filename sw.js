@@ -1,25 +1,7 @@
-const CACHE_NAME = 'fuel-tracker-v1';
-const urlsToCache = [
-  './',
-  './index.html',
-  './manifest.json',
-  './icons/android-chrome-192x192.png',
-  './icons/android-chrome-512x512.png',
-  './icons/apple-touch-icon.png'
-];
-
-// Inštalácia SW a cachovanie
-self.addEventListener('install', event => {
-  event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => cache.addAll(urlsToCache))
-  );
+const CACHE="ev-diesel-cache-v1";
+self.addEventListener("install",e=>{
+  e.waitUntil(caches.open(CACHE).then(c=>c.addAll(["./"])));
 });
-
-// Fetch event – slúži offline
-self.addEventListener('fetch', event => {
-  event.respondWith(
-    caches.match(event.request)
-      .then(response => response || fetch(event.request))
-  );
+self.addEventListener("fetch",e=>{
+  e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request)));
 });

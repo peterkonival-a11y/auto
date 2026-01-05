@@ -5,16 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Fuel Tracker</title>
 
-<!-- PWA manifest -->
+<!-- PWA meta -->
 <link rel="manifest" href="manifest.json">
-
-<!-- Favicons / Apple touch icons -->
-<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32x32.png">
-<link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16x16.png">
-<link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
-
-<!-- Theme color for mobile toolbar -->
 <meta name="theme-color" content="#1e3a8a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<link rel="apple-touch-icon" href="icon-192.png">
 
 <style>
 :root {
@@ -223,36 +220,31 @@ button.remove-rows { background: var(--danger); }
 <div id="setup" class="hidden">
 <h2>Setup</h2>
 <div style="display:flex; flex-direction:column; gap:12px; margin-top:10px;">
-
   <label>
     Vehicle Info:
-    <input type="text" id="vehicleType" placeholder="Enter vehicle type" style="width:100%; padding:6px; border-radius:4px; border:1px solid #bbb;">
+    <input type="text" id="vehicleType" placeholder="Enter vehicle type">
   </label>
-
   <label>
     Odometer:
-    <select id="odometerUnit" style="width:100%; padding:6px; border-radius:4px; border:1px solid #bbb;">
+    <select id="odometerUnit">
       <option value="km">Kilometres</option>
       <option value="mi">Miles</option>
     </select>
   </label>
-
   <label>
     Units:
-    <select id="fuelUnit" style="width:100%; padding:6px; border-radius:4px; border:1px solid #bbb;">
+    <select id="fuelUnit">
       <option value="litres">Litres</option>
       <option value="kWh">Electricity (kWh)</option>
     </select>
   </label>
-
   <label>
     Home Currency:
-    <select id="homeCurrency" style="width:100%; padding:6px; border-radius:4px; border:1px solid #bbb;">
+    <select id="homeCurrency">
       <option value="EUR">Euro (&euro;)</option>
       <option value="USD">US Dollar ($)</option>
     </select>
   </label>
-
 </div>
 </div>
 
@@ -267,11 +259,11 @@ function openTab(tabName){
   event.currentTarget.classList.add('active');
 }
 
-// Fuel Add functions
+// Fuel Add
 function addRow(){
   const tbody = document.querySelector('#fuelTable tbody');
   const row = document.createElement('tr');
-  row.innerHTML=`
+  row.innerHTML = `
     <td><input type="date"></td>
     <td><input type="number" step="0.001" value="1.549"></td>
     <td><input type="number" step="0.01"></td>
@@ -294,32 +286,30 @@ function removeSelectedRows(){
   calculateTable();
 }
 
-// Update units and currency
+// Update units/currency visually
 function applySettings(){
   const odometerUnit = document.getElementById('odometerUnit').value;
   const fuelUnit = document.getElementById('fuelUnit').value;
   const homeCurrency = document.getElementById('homeCurrency').value;
-
   const currencySymbol = homeCurrency === 'EUR' ? '€' : '$';
 
-  // Fuel Add headers
   document.querySelector('#fuelTable th:nth-child(4)').textContent = 'Odometer (' + (odometerUnit==='km'?'km':'mi') + ')';
   document.querySelector('#fuelTable th:nth-child(3)').textContent = 'Fuel (' + fuelUnit + ')';
-  document.querySelector('#fuelTable th:nth-child(2)').innerHTML = 'Price/' + fuelUnit + ' (' + currencySymbol + ')';
+  document.querySelector('#fuelTable th:nth-child(2)').textContent = 'Price/' + fuelUnit + ' (' + currencySymbol + ')';
   document.querySelector('#fuelTable th:nth-child(6)').textContent = 'Consumption (' + fuelUnit + '/100' + (odometerUnit==='km'?'km':'mi') + ')';
-  document.querySelector('#fuelTable th:nth-child(7)').innerHTML = 'Cost/km (' + currencySymbol + ')';
-  document.querySelector('#fuelTable th:nth-child(8)').innerHTML = 'Total (' + currencySymbol + ')';
+  document.querySelector('#fuelTable th:nth-child(7)').textContent = 'Cost/km (' + currencySymbol + ')';
+  document.querySelector('#fuelTable th:nth-child(8)').textContent = 'Total (' + currencySymbol + ')';
 
   // Statistics units
   document.getElementById('avgConsumption').querySelector('.unit').textContent = fuelUnit + '/100' + (odometerUnit==='km'?'km':'mi');
-  document.getElementById('avgFuelPrice').querySelector('.unit').innerHTML = currencySymbol + '/' + fuelUnit;
-  document.getElementById('totalCost').querySelector('.unit').innerHTML = currencySymbol;
+  document.getElementById('avgFuelPrice').querySelector('.unit').textContent = currencySymbol + '/' + fuelUnit;
+  document.getElementById('totalCost').querySelector('.unit').textContent = currencySymbol;
   document.getElementById('totalFuel').querySelector('.unit').textContent = fuelUnit;
   document.getElementById('totalKm').querySelector('.unit').textContent = (odometerUnit==='km'?'km':'mi');
-  document.getElementById('costPerKm').querySelector('.unit').innerHTML = currencySymbol + '/' + (odometerUnit==='km'?'km':'mi');
+  document.getElementById('costPerKm').querySelector('.unit').textContent = currencySymbol + '/' + (odometerUnit==='km'?'km':'mi');
 }
 
-// Calculation (values unchanged, only numeric calculations)
+// Calculation (numeric values)
 function calculateTable(){
   const rows = document.querySelectorAll('#fuelTable tbody tr');
   let prevOdometer = null, totalLiters=0, totalTrip=0, totalCost=0, totalFuelPrice=0, fuelCount=0;
@@ -365,12 +355,12 @@ document.getElementById('odometerUnit').addEventListener('change', applySettings
 document.getElementById('fuelUnit').addEventListener('change', applySettings);
 document.getElementById('homeCurrency').addEventListener('change', applySettings);
 
-// Register Service Worker for PWA
+// Register service worker
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js')
-      .then(reg => console.log('Service Worker registered.', reg))
-      .catch(err => console.log('Service Worker failed:', err));
+  navigator.serviceWorker.register('sw.js').then(function(reg){
+    console.log('Service Worker registered:', reg);
+  }).catch(function(err){
+    console.log('Service Worker registration failed:', err);
   });
 }
 </script>
